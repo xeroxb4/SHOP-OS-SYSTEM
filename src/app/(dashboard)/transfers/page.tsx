@@ -1,0 +1,1 @@
+export default function Page() { return <div><h1 className="text-xl font-bold">Stock transfers</h1><p className="text-sm mt-1" style={{color:"var(--muted)"}}>Scaffolded — full UI coming next.</p></div>; }
