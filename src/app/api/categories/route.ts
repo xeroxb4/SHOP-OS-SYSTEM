@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
+import mongoose from "mongoose";
 import { connectDB } from "@/lib/db";
 import { Category } from "@/lib/models";
-import { getCurrentUser } from "@/lib/auth/jwt";
+import { requireRole } from "@/lib/auth/guard";
 
 export async function GET() {
-  const user = await getCurrentUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const auth = await requireRole();
+  if (!auth.ok) return auth.response;
 
   try {
     await connectDB();
@@ -20,30 +21,28 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const user = await getCurrentUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const auth = await requireRole("admin", "warehouse");
+  if (!auth.ok) return auth.response;
 
   try {
     const { brandId, name } = await req.json();
-    if (!brandId || !name?.trim()) {
+    if (!mongoose.isValidObjectId(brandId) || typeof name !== "string" || !name.trim()) {
       return NextResponse.json(
-        { error: "brandId and name are required" },
+        { error: "Choose a brand and enter a type name" },
         { status: 400 }
       );
     }
     await connectDB();
-    const category = await Category.create({
-      brandId,
-      name: name.trim(),
-    });
+    const category = await Category.create({ brandId, name: name.trim() });
     return NextResponse.json({ category }, { status: 201 });
-  } catch (err: any) {
-    if (err.code === 11000) {
+  } catch (err: unknown) {
+    if ((err as { code?: number }).code === 11000) {
       return NextResponse.json(
-        { error: "Category already exists for this brand" },
+        { error: "That type already exists for this brand" },
         { status: 409 }
       );
     }
-    return NextResponse.json({ error: "Failed to create category" }, { status: 500 });
+    console.error("Create category error:", err);
+    return NextResponse.json({ error: "Failed to create type" }, { status: 500 });
   }
 }

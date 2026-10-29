@@ -8,7 +8,7 @@ export interface IBatch extends Document {
   quantity: number;
   location: "warehouse" | "shop";
   manufactureDate?: Date;
-  expiryDate: Date;
+  expiryDate?: Date; // optional: non-perishable goods have none
   costPrice: number;
   createdAt: Date;
   updatedAt: Date;
@@ -21,7 +21,7 @@ const BatchSchema = new Schema<IBatch>(
     quantity: { type: Number, required: true, min: 0 },
     location: { type: String, enum: ["warehouse", "shop"], required: true },
     manufactureDate: { type: Date },
-    expiryDate: { type: Date, required: true },
+    expiryDate: { type: Date },
     costPrice: { type: Number, required: true, min: 0 },
   },
   { timestamps: true }

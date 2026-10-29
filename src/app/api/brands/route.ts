@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
 import { Brand } from "@/lib/models";
-import { getCurrentUser } from "@/lib/auth/jwt";
+import { requireRole } from "@/lib/auth/guard";
 
 export async function GET() {
-  const user = await getCurrentUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const auth = await requireRole();
+  if (!auth.ok) return auth.response;
 
   try {
     await connectDB();
@@ -17,21 +17,22 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const user = await getCurrentUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const auth = await requireRole("admin", "warehouse");
+  if (!auth.ok) return auth.response;
 
   try {
     const { name } = await req.json();
-    if (!name?.trim()) {
-      return NextResponse.json({ error: "Name is required" }, { status: 400 });
+    if (typeof name !== "string" || !name.trim()) {
+      return NextResponse.json({ error: "Brand name is required" }, { status: 400 });
     }
     await connectDB();
     const brand = await Brand.create({ name: name.trim() });
     return NextResponse.json({ brand }, { status: 201 });
-  } catch (err: any) {
-    if (err.code === 11000) {
-      return NextResponse.json({ error: "Brand already exists" }, { status: 409 });
+  } catch (err: unknown) {
+    if ((err as { code?: number }).code === 11000) {
+      return NextResponse.json({ error: "That brand already exists" }, { status: 409 });
     }
+    console.error("Create brand error:", err);
     return NextResponse.json({ error: "Failed to create brand" }, { status: 500 });
   }
 }

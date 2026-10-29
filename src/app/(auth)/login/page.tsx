@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
@@ -8,19 +8,25 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
-  const [isRegister, setIsRegister] = useState(false);
+  // null = still checking, true = no users yet (first-time setup), false = normal sign-in
+  const [needsSetup, setNeedsSetup] = useState<boolean | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/auth/status")
+      .then((r) => r.json())
+      .then((d) => setNeedsSetup(Boolean(d.needsSetup)))
+      .catch(() => setNeedsSetup(false));
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
     setLoading(true);
 
-    const url = isRegister ? "/api/auth/register" : "/api/auth/login";
-    const body = isRegister
-      ? { email, password, fullName }
-      : { email, password };
+    const url = needsSetup ? "/api/auth/register" : "/api/auth/login";
+    const body = needsSetup ? { email, password, fullName } : { email, password };
 
     try {
       const res = await fetch(url, {
@@ -49,59 +55,51 @@ export default function LoginPage() {
           Shop OS System
         </h1>
         <p className="text-sm mb-5" style={{ color: "var(--muted)" }}>
-          {isRegister
-            ? "Create the first admin account"
-            : "Sign in with the account your admin created"}
+          {needsSetup === null
+            ? "Checking setup…"
+            : needsSetup
+            ? "No accounts yet. Create the first admin account."
+            : "Sign in with the account your admin created."}
         </p>
 
-        <form onSubmit={handleSubmit}>
-          {isRegister && (
+        {needsSetup !== null && (
+          <form onSubmit={handleSubmit}>
+            {needsSetup && (
+              <input
+                className="input-field"
+                placeholder="Full name"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                required
+              />
+            )}
             <input
               className="input-field"
-              placeholder="Full name"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
+              type="email"
+              placeholder="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               required
             />
-          )}
-          <input
-            className="input-field"
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-          <input
-            className="input-field"
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            minLength={6}
-          />
-          {error && (
-            <p className="text-xs mb-3" style={{ color: "var(--danger)" }}>
-              {error}
-            </p>
-          )}
-          <button type="submit" className="btn-primary" disabled={loading}>
-            {loading ? "Please wait…" : isRegister ? "Create account" : "Sign in"}
-          </button>
-        </form>
-
-        <button
-          type="button"
-          className="mt-4 text-sm w-full text-center"
-          style={{ color: "var(--muted)" }}
-          onClick={() => {
-            setIsRegister(!isRegister);
-            setError("");
-          }}
-        >
-          {isRegister ? "Already have an account? Sign in" : "First time? Create admin account"}
-        </button>
+            <input
+              className="input-field"
+              type="password"
+              placeholder={needsSetup ? "Password (at least 8 characters)" : "Password"}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              minLength={needsSetup ? 8 : undefined}
+            />
+            {error && (
+              <p className="text-xs mb-3" style={{ color: "var(--danger)" }}>
+                {error}
+              </p>
+            )}
+            <button type="submit" className="btn-primary" disabled={loading}>
+              {loading ? "Please wait…" : needsSetup ? "Create admin account" : "Sign in"}
+            </button>
+          </form>
+        )}
       </div>
     </div>
   );

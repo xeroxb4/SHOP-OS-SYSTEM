@@ -13,6 +13,8 @@ const NAV = [
   { href: "/reports", label: "Sales & profit" },
 ];
 
+const ADMIN_NAV = [{ href: "/users", label: "Users" }];
+
 export default function DashboardLayout({
   children,
 }: {
@@ -75,7 +77,7 @@ export default function DashboardLayout({
         </div>
 
         <nav className="flex flex-col gap-1 flex-1">
-          {NAV.map((item) => {
+          {(user?.role === "admin" ? [...NAV, ...ADMIN_NAV] : NAV).map((item) => {
             const active =
               item.href === "/"
                 ? pathname === "/"

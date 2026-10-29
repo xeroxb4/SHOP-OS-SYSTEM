@@ -1,10 +1,8 @@
 import { NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/auth/jwt";
+import { requireRole } from "@/lib/auth/guard";
 
 export async function GET() {
-  const user = await getCurrentUser();
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-  return NextResponse.json({ user });
+  const auth = await requireRole();
+  if (!auth.ok) return auth.response;
+  return NextResponse.json({ user: auth.user });
 }

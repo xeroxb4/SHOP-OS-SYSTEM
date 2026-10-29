@@ -19,7 +19,7 @@ const ProductSchema = new Schema<IProduct>(
   {
     categoryId: { type: Schema.Types.ObjectId, ref: "Category", required: true },
     variant: { type: String, required: true, trim: true },
-    sku: { type: String, trim: true, sparse: true },
+    sku: { type: String, trim: true, unique: true, sparse: true },
     costPrice: { type: Number, required: true, min: 0, default: 0 },
     wholesalePrice: { type: Number, required: true, min: 0, default: 0 },
     retailPrice: { type: Number, required: true, min: 0, default: 0 },

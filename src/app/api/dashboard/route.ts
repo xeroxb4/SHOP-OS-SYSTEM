@@ -1,13 +1,11 @@
 import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
 import { Product, Sale, Batch } from "@/lib/models";
-import { getCurrentUser } from "@/lib/auth/jwt";
+import { requireRole } from "@/lib/auth/guard";
 
 export async function GET() {
-  const user = await getCurrentUser();
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const auth = await requireRole();
+  if (!auth.ok) return auth.response;
 
   try {
     await connectDB();
@@ -55,13 +53,13 @@ export async function GET() {
     const in30 = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
     const in90 = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000);
 
-    const batches = await Batch.find({ quantity: { $gt: 0 } })
+    const batches = await Batch.find({ quantity: { $gt: 0 }, expiryDate: { $ne: null } })
       .populate("productId", "variant")
       .lean();
 
     const expiryAlerts = batches
       .map((b) => {
-        const exp = new Date(b.expiryDate);
+        const exp = new Date(b.expiryDate as Date);
         let status = "OK";
         let daysRemaining = Math.ceil(
           (exp.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)

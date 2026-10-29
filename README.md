@@ -25,7 +25,7 @@ Replaces the previous Supabase / single-HTML version with a clean, structured fu
 
 ### 1. Prerequisites
 
-- Node.js 18+
+- Node.js 20.19+ (or 22.13+ / 24)
 - A free MongoDB Atlas cluster: https://cloud.mongodb.com
 
 ### 2. Clone & install
@@ -58,8 +58,24 @@ npm run dev
 
 Open http://localhost:3000
 
-- First visit → click **“First time? Create admin account”** and register.
-- After login you land on the Dashboard.
+- First visit (empty database) → the page asks you to **create the first admin account**.
+- After that, nobody can register themselves. Admins add staff under **Users** in the sidebar.
+- After login you land on the Dashboard. Add your catalogue under **Products**: brand, then type, then product.
+
+## Roles
+
+| Role | Can do |
+|---|---|
+| `admin` | Everything, including managing users |
+| `warehouse` | Add and edit catalogue; stock work (coming) |
+| `shop` | Point of sale and shop stock (coming) |
+| `viewer` | Read only |
+
+## Security notes
+
+- `JWT_SECRET` is required (32+ random characters). The app refuses to sign anyone in without it.
+- Never commit `.env.local`. Only `.env.example` (placeholders) belongs in git.
+- Changing a user's role or deactivating them takes effect immediately.
 
 ## Project structure
 
@@ -100,12 +116,11 @@ src/
 
 ## Next development steps
 
-1. Forms to create brands / categories / products
-2. Purchase invoice posting (with batch + expiry)
-3. Stock transfer UI
-4. Full POS with cart
-5. Sales & profit report
-6. Role-based permissions
+1. Purchase invoice posting (with batch + expiry)
+2. Stock transfer UI
+3. Full POS with cart
+4. Sales & profit report
+5. Docker setup + seed script for installing on any computer
 
 ## License
 
